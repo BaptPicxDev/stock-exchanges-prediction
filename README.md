@@ -1,6 +1,6 @@
 Developed by Baptiste PICARD      
 picard.baptiste@laposte.net       
-Started the 09th of April 2020
+Started the 1st of May 2020
 
 
 In this repository, I implement a Stock Exchange prediction. 
