@@ -8,8 +8,8 @@
 
 # Imports 
 # Usefull librairies
-import numpy as np
-import pandas as pd 
+import numpy as np # Numpy types : -> np.array
+import pandas as pd # Pandas types : -> DataFrame
 import pandas_datareader as pdw # Recover data from web APIs
 import seaborn as sns # Data visualization
 import matplotlib.pyplot as plt # Data visualization
@@ -28,7 +28,7 @@ class AccessData :
 		self.y_train = None
 		self.X_test = None
 		self.y_test = None
-		self.create() #Update the value of df, n_rows, n_cols
+		self.create() # update the value of df, n_rows, n_cols
 
 	def getStock(self) :
 		return self.stock
@@ -65,9 +65,21 @@ class AccessData :
 			if(column == 'Close') :
 				self.setScaler(scaler)
 		self.setDF(df)
-		targets = df['Close'].values
-		df = df.drop('Close', axis=1).values
-		X_train, X_test, y_train, y_test = train_test_split(df, targets, test_size=self.getTestSize(), random_state=42)
+		self.shapeData()
+		# targets = df['Close'].values
+		# df = df.drop('Close', axis=1).values
+		# X_train, X_test, y_train, y_test = train_test_split(df, targets, test_size=self.getTestSize(), random_state=42)
+		# self.setTrainTestSet(X_train, y_train, X_test, y_test)
+
+	def shapeData(self) :
+		X = []
+		y = []
+		data = self.getDF()
+		data = data['Close'].values
+		for i in range(4, len(data)) :
+			X.append(data[i-4:i])
+			y.append(data[i])
+		X_train, X_test, y_train, y_test = train_test_split(np.array(X), np.array(y), test_size=self.getTestSize(), random_state=42)
 		self.setTrainTestSet(X_train, y_train, X_test, y_test)
 
 	def getNAValues(self) :
@@ -92,3 +104,5 @@ class AccessData :
 		plt.xlabel('Date')
 		plt.ylabel('Closing price')
 		plt.show()
+
+	

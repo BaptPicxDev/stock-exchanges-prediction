@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt # Drawing figures
 
 # Own modules
 from stockPricePrediction import *
+from environment import * 
 
 # Environment
 plt.close('all')
@@ -33,4 +34,5 @@ if __name__ == "__main__" :
 	print("Script starting : {}.\n".format(TODAY))
 	start = time.time()
 	SPP =  StockPricePrediction(JSON_FILE, TODAY)
+	SPP.getModel().saveModel()
 	print("End of this script in {} minutes.".format((time.time() - start)/60))

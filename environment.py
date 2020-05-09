@@ -16,6 +16,7 @@ import seaborn
 import keras
 import sklearn
 import matplotlib
+import tensorflow
 
 class Environment :
 
@@ -24,6 +25,7 @@ class Environment :
 	    print("Numpy version : {}".format(numpy.__version__))
 	    print("Pandas version : {}".format(pandas.__version__))
 	    print("Pandas datareader version : {}".format(pandas_datareader.__version__))
+	    print("Tensorflow version : {}".format(tensorflow.__version__))
 	    print("Keras version : {}".format(keras.__version__))
 	    print("Sklearn version : {}".format(sklearn.__version__))
 	    print("Seaborn version : {}".format(seaborn.__version__))

@@ -8,18 +8,21 @@
 
 # Imports 
 # Usefull librairies
-import time
-import numpy as np 
+import time # time duration 
+import joblib # Save models tool
+import numpy as np # array types
+import matplotlib.pyplot as plt # Figure
 
 # Librairies for building machine learning models and process
 from keras.callbacks import ReduceLROnPlateau # Learning rate reduction during training
-from sklearn.metrics import mean_squared_error, explained_variance_score, mean_absolute_error, max_error # Evaluation
+from sklearn.metrics import mean_squared_error, explained_variance_score, mean_absolute_error, max_error # Evaluation score
 
 # My modules 
 from machine_learning import * # models
 
 class Model :
-	def __init__(self, scaler, train_test_data) :
+	def __init__(self, name, scaler, train_test_data) :
+		self.name = name
 		self.scaler = scaler
 		self.X_train = train_test_data[0]
 		self.y_train = train_test_data[1]
@@ -35,6 +38,9 @@ class Model :
 		self.best_model = self.filterModels()
 
 	# Getters / Setters
+	def getName(self) :
+		return self.name
+
 	def getScaler(self) :
 		return self.scaler
 
@@ -122,30 +128,27 @@ class Model :
 				{"model_name" : 'GradientBoost', 'model' : getModelGBR(), 'history' : None, 'score' : None, 'training_time' : 0}
 			]
 		for index, model in enumerate(models) : 
-		    print("{}/{} -> Training {}".format(index+1, len(models), model['model_name']))
-		    if(model['model_name'] == 'LSTM') :
-		        self.reshapeForLSTM()
-		    elif(model['model_name'] == 'Conv1D') :
-		        self.reshapeForConv1D()
-		    else : 
-		    	self.reshapeForMLP()
-		    start = time.time()
-		    if(model['model_name'] == 'LSTM' or model['model_name'] == 'Conv1D' or model['model_name'] == 'MLP') :
-		        learning_rate_reduction = ReduceLROnPlateau(monitor='loss', 
-		                                                    patience=3, 
-		                                                    verbose=1, 
-		                                                    factor=0.2, 
-		                                                    min_lr=0.0001)
-		        model['model'].fit(self.getX_train(), self.gety_train(), batch_size=1, verbose=0, epochs=10, callbacks=[learning_rate_reduction])
-		    else : 
-		        model['model'] = model['model'].fit(self.getX_train(), self.gety_train())
-		    model['training_time'] = (time.time() - start)/60
-		    MSE_score = mean_squared_error(self.gety_test(), model['model'].predict(self.getX_test()))
-		    MAE_score = mean_absolute_error(self.gety_test(), model['model'].predict(self.getX_test())) 
-		    ME_score = max_error(self.gety_test(), model['model'].predict(self.getX_test()))
-		    EA_score = explained_variance_score(self.gety_test(), model['model'].predict(self.getX_test()))
-		    model['score'] = {"MSE" : MSE_score, "MAE" : MAE_score, "ME" : ME_score, "EA" : EA_score}
-		    print("{}/{} -> {} trained in {} minutes.".format(index+1, len(models), model['model_name'], (time.time() - start)/60))
+			print("{}/{} -> Training {}".format(index+1, len(models), model['model_name']))
+			if(model['model_name'] == 'LSTM') :
+				self.reshapeForLSTM()
+			elif(model['model_name'] == 'Conv1D') :
+				self.reshapeForConv1D()
+			else : 
+				self.reshapeForMLP()
+			start = time.time()
+			if(model['model_name'] == 'LSTM' or model['model_name'] == 'Conv1D' or model['model_name'] == 'MLP') :
+				learning_rate_reduction = ReduceLROnPlateau(monitor='loss', patience=3, verbose=0, 
+															factor=0.2, min_lr=0.0001)
+				model['model'].fit(self.getX_train(), self.gety_train(), batch_size=1, verbose=0, epochs=10, callbacks=[learning_rate_reduction])
+			else : 
+				model['model'] = model['model'].fit(self.getX_train(), self.gety_train())
+			model['training_time'] = (time.time() - start)/60
+			MSE_score = mean_squared_error(self.gety_test(), model['model'].predict(self.getX_test()))
+			MAE_score = mean_absolute_error(self.gety_test(), model['model'].predict(self.getX_test())) 
+			ME_score = max_error(self.gety_test(), model['model'].predict(self.getX_test()))
+			EA_score = explained_variance_score(self.gety_test(), model['model'].predict(self.getX_test()))
+			model['score'] = {"MSE" : MSE_score, "MAE" : MAE_score, "ME" : ME_score, "EA" : EA_score}
+			print("{}/{} -> {} trained in {} minutes.".format(index+1, len(models), model['model_name'], (time.time() - start)/60))
 		print("It takes {} minutes to train {} models.".format((time.time() - start_training)/60, len(models)))
 		return models
 
@@ -154,6 +157,43 @@ class Model :
 		for model in self.getModels() :
 			if(model['model_name'] == 'XGB') :
 				print("The best model is {}.".format(model['model_name']))
-				return model['model']
+				return model
 
-		
+	def getResults(self) :
+		X, Y_MSE, Y_MAE, Y_ME, Y_EA = [], [], [], [], []
+		for index, model in enumerate(self.getModels()) :
+			print("{}/{}) {} : {}".format(index+1, len(self.getModels()), model['model_name'], model['score']))
+			X.append(model['model_name'])
+			Y_MSE.append(model['score']['MSE'])
+			Y_MAE.append(model['score']['MAE'])
+			Y_ME.append(model['score']['ME'])
+			Y_EA.append(model['score']['EA'])
+		plt.figure()
+		plt.title('Model evaluation scores')
+		plt.plot(X, Y_MSE, label='MSE')
+		plt.plot(X, Y_MAE, label='MAE')
+		plt.plot(X, Y_ME, label='ME')
+		plt.plot(X, Y_EA, label='EA')
+		plt.ylabel('score')
+		plt.xlabel('Models')
+		plt.legend()
+		plt.show()
+
+	def compareResults(self) :
+		plt.figure()
+		plt.title("Visualization the closing price of "+self.getName())
+		plt.plot(self.getScaler().inverse_transform(self.gety_test().reshape(-1, 1)), label="Values")
+		plt.plot(self.getScaler().inverse_transform(self.getBestModel()['model'].predict(self.getX_test()).reshape(-1, 1)), label="Predicted values")
+		plt.ylabel('Closing price')
+		plt.legend()
+		plt.show()
+
+	def saveModel(self) :
+		m = self.getBestModel()
+		if(m["model_name"]=='LSTM' or m["model_name"]=='MLP' or m["model_name"]=='Conv1D') : # OK\n",
+			model_json = m['model'].to_json()
+			with open("./data/model_"+str(m['model_name'])+".json", "w") as json_file:
+				json_file.write(model_json)
+			m['model'].save_weights("./data/model_"+str(m['model_name'])+".h5")
+		elif(m["model_name"]=="XGB" or m["model_name"]=="GradientBoost" or m["model_name"]=="RandomForest") : # OK
+			joblib.dump(m["model"], "./data/model_"+str(m["model_name"])+".sav")
